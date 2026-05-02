@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Weather App</title>
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.5s ease;
+            overflow: hidden;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 350px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        input {
+            width: 70%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 10px;
+            border: none;
+            background: #4CAF50;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .weather-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f7f7f7;
+            border-radius: 10px;
+            animation: fadeIn 0.8s ease;
+        }
+
+        .temp {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .error {
+            color: red;
+        }
+
+        /*Backgrounds */
+        body.default {
+            background: linear-gradient(135deg, #74ebd5, #ACB6E5);
+        }
+
+        body.sunny {
+            background: linear-gradient(135deg, #fceabb, #f8b500);
+            animation: glow 2s infinite alternate;
+        }
+
+        body.rainy {
+            background: linear-gradient(135deg, #4e54c8, #8f94fb);
+        }
+
+        body.cloudy {
+            background: linear-gradient(135deg, #bdc3c7, #2c3e50);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes glow {
+            from { filter: brightness(1); }
+            to { filter: brightness(1.2); }
+        }
+
+        /*Rain */
+        .rain {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: url('https://i.ibb.co/7QpKsCX/rain.png');
+            animation: rain 0.5s linear infinite;
+            opacity: 0.3;
+            display: none;
+        }
+
+        body.rainy .rain {
+            display: block;
+        }
+
+        @keyframes rain {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100%; }
+        }
+
+        /*Loading */
+        #loading {
+            display: none;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        /*Graph */
+        .chart-box {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body class="{{ bg_class or 'default' }}">
+
+<div class="rain"></div>
+
+<div class="container">
+    <h1>🌤 Weather App</h1>
+
+    <form method="POST">
+        <input type="text" name="city" placeholder="Enter city">
+        <button type="submit">Search</button>
+    </form>
+
+    <p id="loading">Loading...</p>
+
+    {% if temp %}
+    <div class="weather-box">
+        <p class="temp">{{ temp }}°C</p>
+        <p>{{ weather }}</p>
+        <p>Humidity: {{ humidity }}%</p>
+    </div>
+    {% endif %}
+
+    {% if temps %}
+    <div class="chart-box">
+        <canvas id="weatherChart"></canvas>
+    </div>
+    {% endif %}
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+</div>
+
+<!--Loading -->
+<script>
+document.querySelector("form").onsubmit = () => {
+    document.getElementById("loading").style.display = "block";
+};
+</script>
+
+<!-- SAFE GRAPH SCRIPT -->
+<script>
+const temps = JSON.parse('{{ temps | tojson | safe }}');
+const dates = JSON.parse('{{ dates | tojson | safe }}');
+
+const canvas = document.getElementById('weatherChart');
+
+if (canvas && temps && temps.length > 0) {
+    const ctx = canvas.getContext('2d');
+
+    // Create gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, "rgba(76, 175, 80, 0.7)");
+    gradient.addColorStop(1, "rgba(76, 175, 80, 0)");
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Temperature (°C)',
+                data: temps,
+
+                //Style
+                borderColor: "#4CAF50",
+                backgroundColor: gradient,
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+
+                //Points
+                pointBackgroundColor: "#4CAF50",
+                pointBorderColor: "#fff",
+                pointRadius: 5,
+                pointHoverRadius: 8,
+                pointHoverBackgroundColor: "#fff",
+                pointHoverBorderColor: "#4CAF50"
+            }]
+        },
+
+        options: {
+            responsive: true,
+
+            // Animation
+            animation: {
+                duration: 1200,
+                easing: 'easeOutQuart'
+            },
+
+            plugins: {
+                legend: {
+                    labels: {
+                        color: "#333",
+                        font: {
+                            size: 14
+                        }
+                    }
+                },
+
+                tooltip: {
+                    backgroundColor: "#333",
+                    titleColor: "#fff",
+                    bodyColor: "#fff",
+                    borderColor: "#4CAF50",
+                    borderWidth: 1
+                }
+            },
+
+            scales: {
+                x: {
+                    ticks: {
+                        color: "#555"
+                    },
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    ticks: {
+                        color: "#555"
+                    },
+                    grid: {
+                        color: "rgba(0,0,0,0.05)"
+                    }
+                }
+            },
+
+            //Hover glow effect
+            elements: {
+                line: {
+                    borderJoinStyle: 'round'
+                }
+            },
+
+            interaction: {
+                mode: 'nearest',
+                intersect: false
+            }
+        }
+    });
+}
+</script>
+</body>
+</html>
