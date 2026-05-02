@@ -1,6 +1,6 @@
 # Weather App (Flask + OpenWeather API)
 
-A simple weather web app built using Flask that shows real-time weather data and a 5-day forecast with a Chart.js graph.
+This is a simple weather forecasting web application that enables users to search for any city and access live weather updates. It retrieves real-time data from a weather API and dynamically updates the interface based on the response, providing an interactive and user-friendly experience.
 
 ---
 
